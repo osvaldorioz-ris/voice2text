@@ -1,0 +1,4 @@
+# Reglas "lo que escribió Whisper => lo correcto", una por línea.
+# Se aplican a palabras completas, sin importar mayúsculas.
+# Se relee en cada transcripción: no hace falta reiniciar app.py.
+latitos => gatitos

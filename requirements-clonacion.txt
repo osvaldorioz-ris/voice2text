@@ -1,0 +1,4 @@
+# Voces clonadas (opcional). Instala después de requirements.txt.
+chatterbox-tts>=0.1.7
+# La marca de agua de Chatterbox (resemble-perth) usa pkg_resources, que setuptools 81+ ya no trae.
+setuptools<81

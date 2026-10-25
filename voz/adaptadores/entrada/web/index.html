@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voz a texto</title>
+<style>
+  :root {
+    --azul: #1677c8;
+    --azul-texto: #1a6fd1;
+    --chip: #eaf3ff;
+    --tarjeta: #f3f8ff;
+    --texto: #111;
+    --gris: #8a8f98;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ddd; color: var(--texto);
+    display: flex; justify-content: center; min-height: 100vh;
+  }
+  .app {
+    width: 100%; max-width: 440px; min-height: 100vh; position: relative;
+    background: #fff; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .cielo {
+    position: absolute; inset: 0 0 auto 0; height: 300px;
+    background: linear-gradient(160deg, #f4f9ff 0%, #cfe4fb 45%, #e3f1ff 100%);
+  }
+  header {
+    position: relative; display: flex; justify-content: space-between; align-items: center;
+    padding: 46px 20px 0;
+  }
+  .circulo {
+    width: 46px; height: 46px; border-radius: 50%; border: 0; background: #fff;
+    display: grid; place-items: center; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .derecha { display: flex; gap: 14px; }
+  .avatar { background: var(--azul); color: #fff; font-size: 20px; font-weight: 500; }
+  .campana { position: relative; }
+  .campana::after {
+    content: ""; position: absolute; top: 11px; right: 12px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--azul);
+  }
+  .hojas { position: relative; margin-top: 130px; flex: 1; display: flex; flex-direction: column; }
+  .hoja {
+    border-radius: 30px 30px 0 0; padding: 26px 26px 50px; margin-bottom: -26px;
+    display: flex; align-items: center; gap: 16px; font-size: 19px; font-weight: 500;
+    box-shadow: 0 -2px 10px rgba(0,0,0,.05); cursor: pointer;
+  }
+  .h1 { background: var(--tarjeta); }
+  .h2 { background: #fbfdff; }
+  .principal {
+    background: #fff; border-radius: 30px 30px 0 0; padding: 30px 26px 120px; flex: 1;
+    box-shadow: 0 -2px 10px rgba(0,0,0,.05); position: relative;
+  }
+  h1 { font-size: 26px; font-weight: 500; margin-bottom: 18px; }
+  .selector-voz {
+    display: flex; align-items: center; gap: 10px; margin: -6px 0 18px;
+    color: #555; font-size: 15px;
+  }
+  .selector-voz select {
+    appearance: none; -webkit-appearance: none; border: 0; border-radius: 18px;
+    background: var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a6fd1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 14px;
+    color: var(--azul-texto); font: inherit; font-weight: 500; padding: 8px 36px 8px 14px;
+    cursor: pointer;
+  }
+  #saludo { cursor: text; border-radius: 8px; outline: none; }
+  #saludo:focus { background: var(--chip); }
+  .chips { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .chip {
+    background: var(--chip); color: var(--azul-texto); border: 0; border-radius: 18px;
+    padding: 9px 16px; font-size: 16px; font-weight: 500; display: flex; gap: 10px;
+    align-items: center; cursor: pointer;
+  }
+  .conversacion { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .burbuja {
+    align-self: flex-end; max-width: 85%; background: var(--azul); color: #fff;
+    padding: 10px 14px; border-radius: 18px 18px 4px 18px; font-size: 16px; line-height: 1.35;
+  }
+  .burbuja { cursor: pointer; }
+  .burbuja.asistente {
+    align-self: flex-start; background: var(--chip); color: var(--texto);
+    border-radius: 18px 18px 18px 4px;
+  }
+  .burbuja.hablando { outline: 3px solid #9cc7ff; }
+  .estado { color: var(--gris); font-size: 14px; align-self: center; }
+  .barra {
+    position: fixed; bottom: 22px; width: calc(100% - 32px); max-width: 408px;
+    left: 50%; transform: translateX(-50%);
+    background: #fff; border-radius: 34px; padding: 8px 8px 8px 18px;
+    display: flex; align-items: center; gap: 10px;
+    border: 2px solid #c9defa; box-shadow: 0 0 16px rgba(80,140,255,.35);
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: conic-gradient(from 200deg, #1ec8ff, #2566ff, #1ec8ff);
+    -webkit-mask: radial-gradient(circle, transparent 8px, #000 9px);
+            mask: radial-gradient(circle, transparent 8px, #000 9px);
+  }
+  .barra input {
+    flex: 1; min-width: 0; border: 0; outline: 0; font-size: 19px; color: var(--texto);
+    background: transparent;
+  }
+  .barra input::placeholder { color: #9aa0a8; }
+  .boton {
+    width: 46px; height: 46px; border-radius: 50%; border: 0; background: #f0f1f3;
+    display: grid; place-items: center; cursor: pointer; flex: none;
+  }
+  .boton.grabando { background: #e5383b; animation: pulso 1.2s infinite; }
+  .boton.grabando svg { stroke: #fff; }
+  @keyframes pulso {
+    0% { box-shadow: 0 0 0 0 rgba(229,56,59,.5); }
+    100% { box-shadow: 0 0 0 16px rgba(229,56,59,0); }
+  }
+  svg { width: 22px; height: 22px; fill: none; stroke: #222; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round; }
+  .chip svg { stroke: var(--azul-texto); width: 24px; height: 24px; stroke-width: 1.6; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="cielo"></div>
+  <header>
+    <button class="circulo" id="nueva" aria-label="Nueva conversación" title="Nueva conversación">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h12M4 17h8"/></svg>
+    </button>
+    <div class="derecha">
+      <button class="circulo campana" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" style="fill:#222;stroke:none"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0z"/></svg>
+      </button>
+      <button class="circulo avatar" id="avatar">O</button>
+    </div>
+  </header>
+
+  <div class="hojas">
+    <div class="hoja h1">
+      <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>
+      Dispositivos
+    </div>
+    <div class="hoja h2">
+      <svg viewBox="0 0 24 24" style="fill:#222;stroke:none"><path d="M12 2.5l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.4l-6.1 3.5 1.5-6.8L2.2 9.5l6.9-.7z"/></svg>
+      Favoritos
+    </div>
+    <div class="principal">
+      <h1 id="saludo" title="Toca para editar el saludo">¡Qué gusto verte!</h1>
+      <label class="selector-voz">
+        <svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        Voz
+        <select id="voz"></select>
+      </label>
+      <div class="chips" id="chips">
+        <button class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Trucos de productividad</button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M3 12h18a9 9 0 0 1-18 0zM8 9c0-2 2-2 2-4M13 9c0-2 2-2 2-4"/></svg>Metas de crecimiento personal</button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/></svg>Avances científicos</button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 3"/></svg>Conversaciones recientes</button>
+      </div>
+      <div class="conversacion" id="conversacion"></div>
+    </div>
+  </div>
+
+  <div class="barra">
+    <div class="logo"></div>
+    <input id="entrada" placeholder="Habla o escribe…">
+    <button class="boton" id="mic" aria-label="Activar micrófono">
+      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const mic = document.getElementById("mic");
+const entrada = document.getElementById("entrada");
+const conversacion = document.getElementById("conversacion");
+let grabadora = null, partes = [], estadoEl = null;
+
+const selectorVoz = document.getElementById("voz");
+const saludo = document.getElementById("saludo");
+
+function leer(clave) { try { return localStorage.getItem(clave); } catch { return null; } }
+function guardar(clave, valor) { try { localStorage.setItem(clave, valor); } catch { /* sin almacenamiento */ } }
+
+fetch("/config").then(r => r.json()).then(c => {
+  document.getElementById("avatar").textContent = c.nombre[0].toUpperCase();
+  saludo.textContent = leer("saludo") || c.saludo.replace("{nombre}", c.nombre);
+
+  for (const nombre of c.voces) selectorVoz.add(new Option(nombre, nombre));
+  const guardada = leer("voz");
+  selectorVoz.value = c.voces.includes(guardada) ? guardada : c.voz;
+}).catch(() => estado("No pude leer la configuración. ¿Reiniciaste app.py con la versión nueva?"));
+
+selectorVoz.addEventListener("change", () => guardar("voz", selectorVoz.value));
+
+// El saludo se edita tocándolo; Enter guarda, Escape regresa al del servidor.
+saludo.addEventListener("click", () => { saludo.contentEditable = "true"; saludo.focus(); });
+saludo.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); saludo.blur(); }
+  if (e.key === "Escape") { try { localStorage.removeItem("saludo"); } catch {} location.reload(); }
+});
+saludo.addEventListener("blur", () => {
+  saludo.contentEditable = "false";
+  if (saludo.textContent.trim()) guardar("saludo", saludo.textContent.trim());
+});
+
+function estado(texto) {
+  if (!estadoEl) {
+    estadoEl = document.createElement("div");
+    estadoEl.className = "estado";
+    conversacion.append(estadoEl);
+  }
+  estadoEl.textContent = texto;
+  if (!texto) { estadoEl.remove(); estadoEl = null; }
+}
+
+function agregarBurbuja(texto, quien = "usuario") {
+  const b = document.createElement("div");
+  b.className = quien === "asistente" ? "burbuja asistente" : "burbuja";
+  b.textContent = texto;
+  b.title = "Toca para escuchar de nuevo";
+  b.addEventListener("click", () => hablar(texto, b));
+  conversacion.append(b);
+  b.scrollIntoView({ behavior: "smooth" });
+  return b;
+}
+
+// El servidor puede responder con JSON (nuestros errores) o con HTML (404/500 de Flask).
+async function leerError(r) {
+  const cuerpo = await r.text();
+  try { return JSON.parse(cuerpo).error; } catch { /* no era JSON */ }
+  if (r.status === 404) return "el servidor no tiene la ruta. ¿Reiniciaste app.py con la versión nueva?";
+  return `error ${r.status} del servidor; revisa la terminal donde corre app.py`;
+}
+
+// Flujo completo: tu texto -> GPT-4o mini -> respuesta en burbuja -> voz.
+async function conversar(texto) {
+  agregarBurbuja(texto);
+  estado("Pensando…");
+  try {
+    const r = await fetch("/preguntar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto }),
+    });
+    if (!r.ok) throw new Error(await leerError(r));
+    const { respuesta } = await r.json();
+    estado("");
+    hablar(respuesta, agregarBurbuja(respuesta, "asistente"));
+  } catch (e) {
+    estado("No pude obtener respuesta: " + e.message);
+  }
+}
+
+let audioActual = null;
+let turnoVoz = 0;  // sube cada vez que empieza otra lectura, para cortar la anterior
+
+// Divide en frases para que la primera suene mientras se generan las demás.
+function dividirEnFrases(texto) {
+  const partes = texto.match(/[^.!?…\n]*[.!?…]+|[^.!?…\n]+/g) || [texto];
+  const frases = [];
+  for (const p of partes.map(x => x.trim()).filter(Boolean)) {
+    // Junta pedazos muy cortos ("Sí.", "1.") con el anterior para que no suene cortado.
+    if (frases.length && (p.length < 25 || frases[frases.length - 1].length < 25)) {
+      frases[frases.length - 1] += " " + p;
+    } else {
+      frases.push(p);
+    }
+  }
+  return frases.length ? frases : [texto];
+}
+
+async function pedirAudio(frase) {
+  const r = await fetch("/hablar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texto: frase, voz: selectorVoz.value }),
+  });
+  if (!r.ok) throw new Error(await leerError(r));
+  return r.blob();
+}
+
+function reproducir(blob) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(blob);
+    audioActual = new Audio(url);
+    const fin = () => { URL.revokeObjectURL(url); resolve(); };
+    audioActual.onended = fin;
+    audioActual.onpause = fin;  // también termina si otra lectura lo interrumpe
+    audioActual.play().catch(fin);
+  });
+}
+
+async function hablar(texto, burbuja) {
+  const turno = ++turnoVoz;
+  if (audioActual) audioActual.pause();
+  const frases = dividirEnFrases(texto);
+  estado("Generando voz…");
+  burbuja.classList.add("hablando");
+  try {
+    let siguiente = pedirAudio(frases[0]);
+    for (let i = 0; i < frases.length; i++) {
+      const blob = await siguiente;
+      if (turno !== turnoVoz) return;
+      // Pide la siguiente frase mientras suena esta.
+      if (i + 1 < frases.length) siguiente = pedirAudio(frases[i + 1]);
+      estado("");
+      await reproducir(blob);
+      if (turno !== turnoVoz) return;
+    }
+  } catch (e) {
+    if (turno === turnoVoz) estado("No pude reproducir la voz: " + e.message);
+  } finally {
+    burbuja.classList.remove("hablando");
+  }
+}
+
+async function iniciar() {
+  let flujo;
+  try {
+    flujo = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    estado("No tengo permiso para usar el micrófono.");
+    return;
+  }
+  partes = [];
+  grabadora = new MediaRecorder(flujo);
+  grabadora.ondataavailable = e => partes.push(e.data);
+  grabadora.onstop = async () => {
+    flujo.getTracks().forEach(t => t.stop());
+    await enviar(new Blob(partes, { type: grabadora.mimeType }));
+  };
+  grabadora.start();
+  mic.classList.add("grabando");
+  entrada.placeholder = "Escuchando…";
+}
+
+function detener() {
+  grabadora.stop();
+  mic.classList.remove("grabando");
+  entrada.placeholder = "Habla o escribe…";
+}
+
+async function enviar(audio) {
+  estado("Transcribiendo…");
+  const datos = new FormData();
+  datos.append("audio", audio, "audio.webm");
+  try {
+    const r = await fetch("/transcribir", { method: "POST", body: datos });
+    if (!r.ok) throw new Error(await leerError(r));
+    const j = await r.json();
+    estado("");
+    if (j.texto) {
+      conversar(j.texto);
+    } else {
+      estado(j.error || "No escuché nada. Intenta de nuevo.");
+    }
+  } catch (e) {
+    estado("Error al transcribir: " + e.message);
+  }
+}
+
+document.getElementById("nueva").addEventListener("click", async () => {
+  await fetch("/reiniciar", { method: "POST" }).catch(() => {});
+  if (audioActual) audioActual.pause();
+  conversacion.replaceChildren();
+  estadoEl = null;
+  estado("Conversación nueva: el profe olvidó lo anterior.");
+});
+
+mic.addEventListener("click", () => {
+  if (grabadora && grabadora.state === "recording") detener(); else iniciar();
+});
+
+entrada.addEventListener("keydown", e => {
+  if (e.key === "Enter" && entrada.value.trim()) {
+    const texto = entrada.value.trim();
+    conversar(texto);
+    entrada.value = "";
+  }
+});
+</script>
+</body>
+</html>

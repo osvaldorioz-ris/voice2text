@@ -1,0 +1,7 @@
+# Una palabra o frase por línea. Whisper las preferirá cuando suenen parecido.
+# Útil para nombres propios, mascotas, marcas y términos que usas seguido.
+# Se relee en cada transcripción: no hace falta reiniciar app.py.
+gatitos
+Pipo
+Coco
+Kiwi

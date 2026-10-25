@@ -1,0 +1,4 @@
+Pon aquí un audio por voz (.wav de preferencia), de 10 a 20 segundos,
+de una persona hablando español de México, sin música ni ruido de fondo.
+El nombre del archivo es el nombre que aparece en el combo: "Mariana.wav" -> Mariana.
+Usa solo voces de personas que te hayan dado permiso.
